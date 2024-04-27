@@ -11,7 +11,7 @@ const DURATION_MEET = process.env.DURATION_MEET ?? 45
 
 const PROMPT_FILTER_DATE = `
 ### Contexto
-Eres un asistente de inteligencia artificial. Tu propósito es determinar la fecha y hora que el cliente quiere, en el formato yyyy/MM/dd HH:mm:ss.Adicionalmente, recordarle al cliente que el horario de atención es de 8:00 am a 12:00pm y de 2:00pm a 6:00pm
+Eres un asistente de inteligencia artificial. Tu propósito es determinar la fecha y hora que el cliente quiere, en el formato yyyy/MM/dd HH:mm:ss.
 
 ### Fecha y Hora Actual:
 {CURRENT_DAY}
@@ -30,19 +30,6 @@ const generatePromptFilter = (history: string) => {
 
     return mainPrompt;
 }
-
-// Función para verificar si la fecha está dentro del rango de horas especificado
-function isInWorkingHours(date: Date): boolean {
-    const dayOfWeek: number = date.getDay(); // 0 para domingo, 1 para lunes, ..., 6 para sábado
-    const hour: number = date.getHours();
-
-    // Verificar si es un día laborable (de lunes a viernes) y está dentro del rango de horas
-    return (dayOfWeek >= 1 && dayOfWeek <= 5) && // Día laborable
-        ((hour >= 8 && hour < 12) || (hour >= 14 && hour < 18)); // Rango de horas
-}
-
-
-
 
 const flowSchedule = addKeyword(EVENTS.ACTION).addAction(async (ctx, { extensions, state, flowDynamic, endFlow }) => {
     await flowDynamic('Dame un momento para consultar la agenda...');
@@ -67,15 +54,6 @@ const flowSchedule = addKeyword(EVENTS.ACTION).addAction(async (ctx, { extension
 
     const isDateAvailable = listParse.every(({ fromDate, toDate }) => !isWithinInterval(desiredDate, { start: fromDate, end: toDate }));
 
-    if (!isInWorkingHours(desiredDate)) {
-        console.log("La fecha deseada no está dentro del horario laboral de lunes a viernes.");
-        const s = 'La fecha deseada no está dentro del horario laboral de lunes a viernes.¿Alguna otra fecha y hora?';
-        await flowDynamic(s)
-        await handleHistory({ content: s, role: 'assistant' }, state);
-        return endFlow()
-
-    }
-
     if(!isDateAvailable){
         const m = 'Lo siento, esa hora ya está reservada. ¿Alguna otra fecha y hora?';
         await flowDynamic(m);
@@ -96,7 +74,7 @@ const flowSchedule = addKeyword(EVENTS.ACTION).addAction(async (ctx, { extension
 }).addAction({capture:true}, async ({body},{gotoFlow, flowDynamic, state}) => {
 
     if(body.toLowerCase().includes('si')) return gotoFlow(flowConfirm)
-    
+
     await flowDynamic('¿Alguna otra fecha y hora?')
     await state.update({desiredDate:null})
 })
